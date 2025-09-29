@@ -1,0 +1,254 @@
+<!-- Save as user-app.html -->
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Earn & Reward — Mini App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <style>
+    body{font-family:'Nunito',sans-serif;margin:0;background:#f4f4f9}
+    #app{max-width:500px;margin:0 auto}
+    .profile-header{padding:20px;display:flex;align-items:center;border-bottom:1px solid #ddd;background:#fff}
+    .profile-info{display:flex;gap:12px;align-items:center}
+    #user-photo{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #007aff}
+    main{padding:15px}
+    .stat-card{background:#fff;border:1px solid #ddd;padding:15px;border-radius:10px;text-align:center;margin-bottom:12px}
+    .task{background:#fff;border:1px solid #ddd;padding:14px;border-radius:10px;margin-bottom:12px;text-align:center}
+    .action-btn{background:#007aff;color:#fff;padding:12px;border:none;border-radius:8px;width:100%;cursor:pointer}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:500px;margin:0 auto;display:flex;justify-content:space-around;background:#fff;border-top:1px solid #ddd}
+    .nav-btn{flex:1;padding:10px;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;color:#666}
+    .nav-btn.active{color:#007aff;font-weight:700}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px}
+    .modal{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center}
+    .modal-content{background:#fff;padding:20px;border-radius:10px;text-align:center}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="profile-header">
+      <div class="profile-info">
+        <img id="user-photo" src="https://i.imgur.com/placeholder.png" alt="photo">
+        <div>
+          <div id="user-name" style="font-weight:700">Loading...</div>
+          <div id="user-sub" style="color:#666">Balance: <span id="user-points">0</span> TK</div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div id="home" class="page">
+        <h2>Dashboard</h2>
+        <div class="stat-card"><strong>Daily Ads Watched</strong><div><span id="daily-ads">0</span> / 25</div></div>
+        <div class="stat-card"><strong>Referrals</strong><div id="ref-count">0</div></div>
+        <div style="background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:10px">
+          <div style="font-weight:700">Share your referral</div>
+          <input id="referral-link" readonly />
+          <button id="copy-ref" class="action-btn" style="margin-top:8px">Copy Referral Link</button>
+        </div>
+
+        <!-- Monetag ad -->
+        <div style="margin-top:15px;text-align:center">
+          <script src='//libtl.com/sdk.js' data-zone='9949518' data-sdk='show_9949518'></script>
+        </div>
+
+      </div>
+
+      <div id="tasks" class="page" style="display:none">
+        <h2>Tasks</h2>
+        <div id="tasks-list"></div>
+      </div>
+
+      <div id="withdraw" class="page" style="display:none">
+        <h2>Withdraw</h2>
+        <form id="withdraw-form">
+          <label>Method</label>
+          <select id="withdraw-method"><option>Bkash</option><option>Nagad</option><option>Payeer</option><option>Binance</option></select>
+          <label>Account</label>
+          <input id="withdraw-account" required />
+          <label>Amount (TK)</label>
+          <input id="withdraw-amount" type="number" required />
+          <button type="submit" class="action-btn">Request Withdraw</button>
+        </form>
+      </div>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="home"><i class="fas fa-home"></i><small>Home</small></button>
+      <button class="nav-btn" data-page="tasks"><i class="fas fa-tasks"></i><small>Tasks</small></button>
+      <button class="nav-btn" data-page="withdraw"><i class="fas fa-wallet"></i><small>Withdraw</small></button>
+    </nav>
+  </div>
+
+  <div class="modal" id="loadingModal"><div class="modal-content"><div style="margin-bottom:10px" class="loader"></div><div>Loading...</div></div></div>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', ()=>{
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5xn_MTuYWRVG_K4lUDQZD8jaVUrlsS28",
+    authDomain: "bangladeshi-bot.firebaseapp.com",
+    projectId: "bangladeshi-bot",
+    storageBucket: "bangladeshi-bot.appspot.com",
+    messagingSenderId: "833553219415",
+    appId: "1:833553219415:web:20dd02e645f080d2994812"
+  };
+  const BOT_TOKEN = "7801565018:AAERNFu6qxoYGYAiwpmo7BJm_yH_rQKDy40";
+  const ADMIN_CHAT_ID = "7890928539";
+  const BOT_USERNAME = "Money_Digger_Online_bot";
+  const CHANNEL_LINK = "https://t.me/BasicTouchPro";
+  const GROUP_LINK = "https://t.me/BasicTouch";
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const $ = id=>document.getElementById(id);
+
+  const userPhoto = $('user-photo');
+  const userName = $('user-name');
+  const userPoints = $('user-points');
+  const dailyAdsEl = $('daily-ads');
+  const refCountEl = $('ref-count');
+  const referralLinkInput = $('referral-link');
+  const tasksList = $('tasks-list');
+  const loadingModal = $('loadingModal');
+
+  // Navigation
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.addEventListener('click', ()=> {
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+      document.getElementById(b.dataset.page).style.display='block';
+    });
+  });
+
+  let tg = window.Telegram?.WebApp;
+  let tgUser = tg?.initDataUnsafe?.user || null;
+
+  async function promptFallbackUser(){
+    const id = prompt("Enter test user id");
+    const name = prompt("Enter name", "Demo User");
+    if(!id) throw new Error("No user id provided");
+    return {id, first_name: name, username: null, photo_url: `https://i.pravatar.cc/100?u=${id}`};
+  }
+
+  async function init(){
+    try{
+      let user = tgUser || await promptFallbackUser();
+      const uid = `tg_${user.id}`;
+      userPhoto.src = user.photo_url || `https://i.pravatar.cc/100?u=${uid}`;
+      userName.innerText = `${user.first_name || 'User'}`;
+
+      const userDocRef = db.collection('users').doc(uid);
+      const snap = await userDocRef.get();
+      if(!snap.exists){
+        await userDocRef.set({
+          id: uid,
+          tgId: String(user.id),
+          name: (user.first_name||'User'),
+          points: 0,
+          dailyAds: 0,
+          lastAdDate: new Date().toISOString().slice(0,10),
+          referrals: [],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      userDocRef.onSnapshot(docSnap=>{
+        if(!docSnap.exists) return;
+        const data = docSnap.data();
+        userPoints.innerText = data.points||0;
+        dailyAdsEl.innerText = data.dailyAds||0;
+        refCountEl.innerText = (data.referrals||[]).length;
+        referralLinkInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${uid}`;
+        window.CURRENT_USER = { uid, ...data };
+      });
+
+      db.collection('tasks').where('active','==', true).onSnapshot(snapshot=>{
+        tasksList.innerHTML = '';
+        snapshot.forEach(doc=>{
+          const t = { id: doc.id, ...doc.data() };
+          const d = document.createElement('div');
+          d.className = 'task';
+          d.innerHTML = `<div style="font-weight:700">${t.title}</div><div style="color:#666">${t.description||''}</div>
+            <div style="margin-top:10px"><button class="action-btn" data-task='${t.id}'>Claim (${t.reward} TK)</button></div>`;
+          tasksList.appendChild(d);
+          const btn = d.querySelector('button');
+          if(btn) btn.addEventListener('click',()=> claimTask(t));
+        });
+      });
+
+    }catch(err){ alert('Init error: '+err.message); console.error(err); }
+  }
+
+  async function claimTask(task){
+    try{
+      showLoading(true);
+      const user = window.CURRENT_USER;
+      if(!user) throw new Error('User not loaded');
+      const userRef = db.collection('users').doc(user.uid);
+      if(task.type === 'ad'){
+        const today = new Date().toISOString().slice(0,10);
+        const snap = await userRef.get();
+        const data = snap.data();
+        if(data.lastAdDate !== today){
+          await userRef.update({ dailyAds: 0, lastAdDate: today });
+        }
+        await userRef.update({
+          points: firebase.firestore.FieldValue.increment(task.reward || 1),
+          dailyAds: firebase.firestore.FieldValue.increment(1)
+        });
+      } else {
+        await userRef.update({ points: firebase.firestore.FieldValue.increment(task.reward||0) });
+      }
+      showLoading(false);
+      alert(`You earned ${task.reward||0} TK`);
+    }catch(e){ showLoading(false); alert('Failed to claim task: '+(e.message||e)); }
+  }
+
+  $('withdraw-form')?.addEventListener('submit', async e=>{
+    e.preventDefault();
+    try{
+      const acc = $('withdraw-account').value.trim();
+      const amount = Number($('withdraw-amount').value);
+      const method = $('withdraw-method').value;
+      if(!acc || !amount) return alert('Fill account and amount');
+      if(amount < 100) return alert('Minimum 100 TK required');
+      const user = window.CURRENT_USER;
+      if(!user) return alert('User not ready');
+      if(user.points < amount) return alert('Not enough points');
+
+      await db.collection('users').doc(user.uid).update({ points: firebase.firestore.FieldValue.increment(-amount) });
+      const w = { userUid: user.uid, userName: user.name||user.tgId, method, account: acc, amount, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+      const docRef = await db.collection('withdrawals').add(w);
+
+      try{
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: `Withdraw Request\nUser: ${user.name}\nAmount: ${amount}\nMethod: ${method}\nAccount: ${acc}\nID: ${docRef.id}` })
+        });
+      }catch(err){ console.warn('Telegram send failed', err); }
+
+      alert('Withdraw requested.');
+      $('withdraw-form').reset();
+    }catch(err){ alert('Withdraw failed: '+err.message); }
+  });
+
+  $('copy-ref')?.addEventListener('click', ()=>{ navigator.clipboard.writeText(referralLinkInput.value); alert('Copied!'); });
+
+  function showLoading(show){ loadingModal.style.display = show ? 'flex' : 'none'; }
+
+  init();
+
+  }); // DOMContentLoaded
+  </script>
+</body>
+</html>
