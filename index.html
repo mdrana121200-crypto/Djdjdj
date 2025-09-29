@@ -48,7 +48,7 @@
         <button id="copy-ref" class="action-btn" style="margin-top:8px">Copy Referral Link</button>
       </div>
 
-      <!-- Gigapub Ad -->
+      <!-- Gigapub Ad Button -->
       <div style="margin-top:15px;text-align:center">
         <button id="watch-ad-btn" class="action-btn">Watch Ad</button>
       </div>
@@ -88,7 +88,7 @@
 <!-- Telegram WebApp -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <!-- Gigapub Script -->
-<script src="https://ad.gigapub.tech/script?id=3338"></script>
+<script src="https://ad.gigapub.tech/script?id=3338" async defer></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -190,6 +190,10 @@ async function init(){
 // ---------------- GIGAPUB AD WATCH ----------------
 $('watch-ad-btn').addEventListener('click', async ()=>{
   try{
+    if(typeof window.showGiga !== 'function'){
+      alert("Ad system not loaded yet, try again in a few seconds.");
+      return;
+    }
     await window.showGiga(); // Gigapub ad call
     // Reward user after ad is watched
     const user = window.CURRENT_USER;
@@ -221,52 +225,3 @@ async function claimTask(task){
         await userRef.update({ dailyAds: 0, lastAdDate: today });
       }
       await userRef.update({
-        points: firebase.firestore.FieldValue.increment(task.reward || 1),
-        dailyAds: firebase.firestore.FieldValue.increment(1)
-      });
-    } else {
-      await userRef.update({ points: firebase.firestore.FieldValue.increment(task.reward||0) });
-    }
-    showLoading(false);
-    alert(`You earned ${task.reward||0} TK`);
-  }catch(e){ showLoading(false); alert('Failed to claim task: '+(e.message||e)); }
-}
-
-$('withdraw-form')?.addEventListener('submit', async e=>{
-  e.preventDefault();
-  try{
-    const acc = $('withdraw-account').value.trim();
-    const amount = Number($('withdraw-amount').value);
-    const method = $('withdraw-method').value;
-    if(!acc || !amount) return alert('Fill account and amount');
-    if(amount < 100) return alert('Minimum 100 TK required');
-    const user = window.CURRENT_USER;
-    if(!user) return alert('User not ready');
-    if(user.points < amount) return alert('Not enough points');
-
-    await db.collection('users').doc(user.uid).update({ points: firebase.firestore.FieldValue.increment(-amount) });
-    const w = { userUid: user.uid, userName: user.name||user.tgId, method, account: acc, amount, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-    const docRef = await db.collection('withdrawals').add(w);
-
-    try{
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: `Withdraw Request\nUser: ${user.name}\nAmount: ${amount}\nMethod: ${method}\nAccount: ${acc}\nID: ${docRef.id}` })
-      });
-    }catch(err){ console.warn('Telegram send failed', err); }
-
-    alert('Withdraw requested.');
-    $('withdraw-form').reset();
-  }catch(err){ alert('Withdraw failed: '+err.message); }
-});
-
-$('copy-ref')?.addEventListener('click', ()=>{ navigator.clipboard.writeText(referralLinkInput.value); alert('Copied!'); });
-
-function showLoading(show){ loadingModal.style.display = show ? 'flex' : 'none'; }
-
-init();
-
-}); // DOMContentLoaded
-</script>
-</body>
-</html>
