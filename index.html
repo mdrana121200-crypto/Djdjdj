@@ -26,202 +26,148 @@
   </style>
 </head>
 <body>
-<div id="app">
-  <header class="profile-header">
-    <div class="profile-info">
-      <img id="user-photo" src="https://i.imgur.com/placeholder.png" alt="photo">
-      <div>
-        <div id="user-name" style="font-weight:700">Loading...</div>
-        <div id="user-sub" style="color:#666">Balance: <span id="user-points">0</span> TK</div>
+  <div id="app">
+    <header class="profile-header">
+      <div class="profile-info">
+        <img id="user-photo" src="https://i.imgur.com/placeholder.png" alt="photo">
+        <div>
+          <div id="user-name" style="font-weight:700">Loading...</div>
+          <div id="user-sub" style="color:#666">Balance: <span id="user-points">0</span> TK</div>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <main>
-    <div id="home" class="page">
-      <h2>Dashboard</h2>
-      <div class="stat-card"><strong>Daily Ads Watched</strong><div><span id="daily-ads">0</span> / 25</div></div>
-      <div class="stat-card"><strong>Referrals</strong><div id="ref-count">0</div></div>
-      <div style="background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:10px">
-        <div style="font-weight:700">Share your referral</div>
-        <input id="referral-link" readonly />
-        <button id="copy-ref" class="action-btn" style="margin-top:8px">Copy Referral Link</button>
+    <main>
+      <div id="home" class="page">
+        <h2>Dashboard</h2>
+        <div class="stat-card"><strong>Daily Ads Watched</strong><div><span id="daily-ads">0</span> / 25</div></div>
+        <div class="stat-card"><strong>Referrals</strong><div id="ref-count">0</div></div>
+        <div style="background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:10px">
+          <div style="font-weight:700">Share your referral</div>
+          <input id="referral-link" readonly />
+          <button id="copy-ref" class="action-btn" style="margin-top:8px">Copy Referral Link</button>
+        </div>
       </div>
 
-      <!-- Gigapub Ad Button -->
-      <div style="margin-top:15px;text-align:center">
-        <button id="watch-ad-btn" class="action-btn">Watch Ad</button>
+      <div id="tasks" class="page" style="display:none">
+        <h2>Tasks</h2>
+        <div id="tasks-list"></div>
       </div>
-    </div>
 
-    <div id="tasks" class="page" style="display:none">
-      <h2>Tasks</h2>
-      <div id="tasks-list"></div>
-    </div>
+      <div id="withdraw" class="page" style="display:none">
+        <h2>Withdraw</h2>
+        <form id="withdraw-form">
+          <label>Method</label>
+          <select id="withdraw-method"><option>Bkash</option><option>Nagad</option><option>Payeer</option><option>Binance</option></select>
+          <label>Account</label>
+          <input id="withdraw-account" required />
+          <label>Amount (TK)</label>
+          <input id="withdraw-amount" type="number" required />
+          <button type="submit" class="action-btn">Request Withdraw</button>
+        </form>
+      </div>
+    </main>
 
-    <div id="withdraw" class="page" style="display:none">
-      <h2>Withdraw</h2>
-      <form id="withdraw-form">
-        <label>Method</label>
-        <select id="withdraw-method"><option>Bkash</option><option>Nagad</option><option>Payeer</option><option>Binance</option></select>
-        <label>Account</label>
-        <input id="withdraw-account" required />
-        <label>Amount (TK)</label>
-        <input id="withdraw-amount" type="number" required />
-        <button type="submit" class="action-btn">Request Withdraw</button>
-      </form>
-    </div>
-  </main>
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="home"><i class="fas fa-home"></i><small>Home</small></button>
+      <button class="nav-btn" data-page="tasks"><i class="fas fa-tasks"></i><small>Tasks</small></button>
+      <button class="nav-btn" data-page="withdraw"><i class="fas fa-wallet"></i><small>Withdraw</small></button>
+    </nav>
+  </div>
 
-  <nav class="bottom-nav">
-    <button class="nav-btn active" data-page="home"><i class="fas fa-home"></i><small>Home</small></button>
-    <button class="nav-btn" data-page="tasks"><i class="fas fa-tasks"></i><small>Tasks</small></button>
-    <button class="nav-btn" data-page="withdraw"><i class="fas fa-wallet"></i><small>Withdraw</small></button>
-  </nav>
-</div>
+  <div class="modal" id="loadingModal"><div class="modal-content"><div style="margin-bottom:10px" class="loader"></div><div>Loading...</div></div></div>
 
-<div class="modal" id="loadingModal"><div class="modal-content"><div style="margin-bottom:10px" class="loader"></div><div>Loading...</div></div></div>
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Firebase compat -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<!-- Telegram WebApp -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Gigapub Script -->
-<script src="https://ad.gigapub.tech/script?id=3338" async defer></script>
+  <script>
+  // ---------- CONFIG ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5xn_MTuYWRVG_K4lUDQZD8jaVUrlsS28",
+    authDomain: "bangladeshi-bot.firebaseapp.com",
+    projectId: "bangladeshi-bot",
+    storageBucket: "bangladeshi-bot.appspot.com",
+    messagingSenderId: "833553219415",
+    appId: "1:833553219415:web:20dd02e645f080d2994812"
+  };
+  const BOT_TOKEN = "7801565018:AAERNFu6qxoYGYAiwpmo7BJm_yH_rQKDy40";
+  const ADMIN_CHAT_ID = "7890928539";
+  const BOT_USERNAME = "Money_Digger_Online_bot";
+  const GPLINK_API_KEY = "350d6fa8e30f624a0acfeb5b472812124942bc58";
 
-<script>
-document.addEventListener('DOMContentLoaded', ()=>{
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const $ = id => document.getElementById(id);
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD5xn_MTuYWRVG_K4lUDQZD8jaVUrlsS28",
-  authDomain: "bangladeshi-bot.firebaseapp.com",
-  projectId: "bangladeshi-bot",
-  storageBucket: "bangladeshi-bot.appspot.com",
-  messagingSenderId: "833553219415",
-  appId: "1:833553219415:web:20dd02e645f080d2994812"
-};
-const BOT_TOKEN = "7801565018:AAERNFu6qxoYGYAiwpmo7BJm_yH_rQKDy40";
-const ADMIN_CHAT_ID = "7890928539";
-const BOT_USERNAME = "Money_Digger_Online_bot";
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-const $ = id=>document.getElementById(id);
-const userPhoto = $('user-photo');
-const userName = $('user-name');
-const userPoints = $('user-points');
-const dailyAdsEl = $('daily-ads');
-const refCountEl = $('ref-count');
-const referralLinkInput = $('referral-link');
-const tasksList = $('tasks-list');
-const loadingModal = $('loadingModal');
-
-// Navigation
-document.querySelectorAll('.nav-btn').forEach(b=>{
-  b.addEventListener('click', ()=> {
-    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    document.querySelectorAll('.page').forEach(p=>p.style.display='none');
-    document.getElementById(b.dataset.page).style.display='block';
+  // Navigation
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+      document.getElementById(b.dataset.page).style.display='block';
+    });
   });
-});
 
-let tg = window.Telegram?.WebApp;
-let tgUser = tg?.initDataUnsafe?.user || null;
+  let tg = window.Telegram?.WebApp;
+  let tgUser = tg?.initDataUnsafe?.user || null;
 
-async function promptFallbackUser(){
-  const id = prompt("Enter test user id");
-  const name = prompt("Enter name", "Demo User");
-  if(!id) throw new Error("No user id provided");
-  return {id, first_name: name, username: null, photo_url: `https://i.pravatar.cc/100?u=${id}`};
-}
+  async function promptFallbackUser(){
+    const id = prompt("Enter test user id");
+    const name = prompt("Enter name", "Demo User");
+    return {id, first_name: name, username: null, photo_url: `https://i.pravatar.cc/100?u=${id}`};
+  }
 
-async function init(){
-  try{
-    let user = tgUser || await promptFallbackUser();
+  async function shortenWithGPLink(longUrl){
+    try{
+      const res = await fetch("https://api.gplink.co/v1/links",{
+        method: "POST",
+        headers:{
+          "Authorization": "Bearer " + GPLINK_API_KEY,
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({ url: longUrl })
+      });
+      const data = await res.json();
+      return data?.data?.link || longUrl;
+    }catch(e){
+      console.error("GPLink error:", e);
+      return longUrl;
+    }
+  }
+
+  async function init(){
+    let user = tgUser;
+    if(!user) user = await promptFallbackUser();
     const uid = `tg_${user.id}`;
-    userPhoto.src = user.photo_url || `https://i.pravatar.cc/100?u=${uid}`;
-    userName.innerText = `${user.first_name || 'User'}`;
-
     const userDocRef = db.collection('users').doc(uid);
     const snap = await userDocRef.get();
     if(!snap.exists){
-      await userDocRef.set({
-        id: uid,
-        tgId: String(user.id),
-        name: (user.first_name||'User'),
-        points: 0,
-        dailyAds: 0,
-        lastAdDate: new Date().toISOString().slice(0,10),
-        referrals: [],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      await userDocRef.set({id: uid, tgId: String(user.id), name: user.first_name, points: 0, dailyAds: 0, lastAdDate: new Date().toISOString().slice(0,10), referrals: []});
     }
-
-    userDocRef.onSnapshot(docSnap=>{
-      if(!docSnap.exists) return;
+    userDocRef.onSnapshot(async docSnap=>{
       const data = docSnap.data();
-      userPoints.innerText = data.points||0;
-      dailyAdsEl.innerText = data.dailyAds||0;
-      refCountEl.innerText = (data.referrals||[]).length;
-      referralLinkInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${uid}`;
+      $('user-name').innerText = data.name;
+      $('user-points').innerText = data.points;
+      $('daily-ads').innerText = data.dailyAds;
+      $('ref-count').innerText = (data.referrals||[]).length;
+      const longLink = `https://t.me/${BOT_USERNAME}?start=ref_${uid}`;
+      const shortLink = await shortenWithGPLink(longLink);
+      $('referral-link').value = shortLink;
       window.CURRENT_USER = { uid, ...data };
     });
-
-    db.collection('tasks').where('active','==', true).onSnapshot(snapshot=>{
-      tasksList.innerHTML = '';
-      snapshot.forEach(doc=>{
-        const t = { id: doc.id, ...doc.data() };
-        const d = document.createElement('div');
-        d.className = 'task';
-        d.innerHTML = `<div style="font-weight:700">${t.title}</div><div style="color:#666">${t.description||''}</div>
-          <div style="margin-top:10px"><button class="action-btn" data-task='${t.id}'>Claim (${t.reward} TK)</button></div>`;
-        tasksList.appendChild(d);
-        const btn = d.querySelector('button');
-        if(btn) btn.addEventListener('click',()=> claimTask(t));
-      });
-    });
-
-  }catch(err){ alert('Init error: '+err.message); console.error(err); }
-}
-
-// ---------------- GIGAPUB AD WATCH ----------------
-$('watch-ad-btn').addEventListener('click', async ()=>{
-  try{
-    if(typeof window.showGiga !== 'function'){
-      alert("Ad system not loaded yet, try again in a few seconds.");
-      return;
-    }
-    await window.showGiga(); // Gigapub ad call
-    // Reward user after ad is watched
-    const user = window.CURRENT_USER;
-    if(user){
-      const userRef = db.collection('users').doc(user.uid);
-      await userRef.update({
-        points: firebase.firestore.FieldValue.increment(1),
-        dailyAds: firebase.firestore.FieldValue.increment(1)
-      });
-      alert("You earned 1 TK for watching the ad!");
-    }
-  }catch(e){
-    alert("Failed to load ad: "+e.message);
   }
-});
 
-// ---------------- OTHER FUNCTIONS ----------------
-async function claimTask(task){
-  try{
-    showLoading(true);
-    const user = window.CURRENT_USER;
-    if(!user) throw new Error('User not loaded');
-    const userRef = db.collection('users').doc(user.uid);
-    if(task.type === 'ad'){
-      const today = new Date().toISOString().slice(0,10);
-      const snap = await userRef.get();
-      const data = snap.data();
-      if(data.lastAdDate !== today){
-        await userRef.update({ dailyAds: 0, lastAdDate: today });
-      }
-      await userRef.update({
+  // Copy referral
+  $('copy-ref').addEventListener('click', ()=>{
+    navigator.clipboard.writeText($('referral-link').value);
+    alert('Copied!');
+  });
+
+  init();
+  </script>
+</body>
+</html>
