@@ -48,7 +48,7 @@
         <button id="copy-ref" class="action-btn" style="margin-top:8px">Copy Referral Link</button>
       </div>
 
-      <!-- Gigapub Ad Button -->
+      <!-- Monetag Ad Button -->
       <div style="margin-top:15px;text-align:center">
         <button id="watch-ad-btn" class="action-btn">Watch Ad</button>
       </div>
@@ -87,8 +87,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <!-- Telegram WebApp -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Gigapub Script -->
-<script src="https://ad.gigapub.tech/script?id=3338" async defer></script>
+<!-- Monetag SDK -->
+<script src="//libtl.com/sdk.js" data-zone="9949518" data-sdk="show_9949518"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -185,14 +185,14 @@ async function init(){
   }catch(err){ alert('Init error: '+err.message); console.error(err); }
 }
 
-// ---------------- GIGAPUB AD WATCH ----------------
+// ---------------- MONETAG AD WATCH ----------------
 $('watch-ad-btn').addEventListener('click', async ()=>{
   try{
-    if(typeof window.showGiga !== 'function'){
-      alert("Ad system not loaded yet, try again in a few seconds.");
+    if(typeof Monetag === 'undefined' || !Monetag.show) {
+      alert("Monetag Ad system not loaded yet, try again in a few seconds.");
       return;
     }
-    await window.showGiga();
+    Monetag.show();
     const user = window.CURRENT_USER;
     if(user){
       const userRef = db.collection('users').doc(user.uid);
